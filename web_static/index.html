@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ModelScraper Web</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23101317'/%3E%3Ctext x='32' y='39' font-size='22' text-anchor='middle' fill='%2331d17b' font-family='Arial'%3ESL%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail">
+      <div class="brand">
+        <div class="brand-mark">SL</div>
+        <div>
+          <h1>Signal Lab</h1>
+          <p>ModelScraper Web</p>
+        </div>
+      </div>
+      <nav class="platforms" aria-label="Platforms">
+        <button class="platform-button active" data-platform="Chaturbate">Chaturbate</button>
+        <button class="platform-button" data-platform="MyFreeCams">MyFreeCams</button>
+        <button class="platform-button" data-platform="Stripchat">Stripchat</button>
+        <button class="platform-button" data-platform="XHamsterLive">XHamsterLive</button>
+      </nav>
+      <div class="rail-status">
+        <span id="connectionDot" class="connection-dot"></span>
+        <span id="connectionLabel">Connecting</span>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="label">Selected platform</p>
+          <h2 id="platformTitle">Chaturbate</h2>
+        </div>
+        <div class="status-cluster">
+          <span id="statusBadge" class="status-badge">Idle</span>
+          <button id="saveLayoutButton" class="ghost-button" type="button">Save Layout</button>
+        </div>
+      </header>
+
+      <section class="control-grid" aria-label="Operations">
+        <div class="panel session-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">Session</p>
+              <h3>Workspace folder</h3>
+            </div>
+          </div>
+          <p id="sessionPath" class="path-line">No session selected</p>
+          <div class="button-row">
+            <button type="button" class="primary-button" data-action="create-session">New Session</button>
+            <button type="button" class="secondary-button" data-action="latest-session">Use Latest</button>
+            <button type="button" class="icon-button" data-action="open-session" title="Open session folder">Open</button>
+          </div>
+        </div>
+
+        <div class="panel run-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">Run controls</p>
+              <h3>Automation</h3>
+            </div>
+            <button id="stopButton" type="button" class="danger-button" data-task="stop" disabled>Stop</button>
+          </div>
+          <div class="toggle-row">
+            <label><input id="headlessToggle" type="checkbox" checked> Hide browser for steps 1-2</label>
+            <label><input id="minimizeToggle" type="checkbox" checked> Hide browser except captcha</label>
+          </div>
+          <div class="task-grid">
+            <button type="button" class="run-button full" data-task="full-auto" disabled>Run Full Auto Flow</button>
+            <button id="resumeButton" type="button" class="run-button" data-task="resume" hidden disabled>Resume Safe Run</button>
+            <button type="button" class="run-button" data-task="step1" disabled>Run Step 1 - VPN List</button>
+            <button type="button" class="run-button" data-task="step2" disabled>Run Step 2 - Local List</button>
+            <button type="button" class="run-button" data-task="step3" disabled>Run Step 3 - Compare</button>
+            <button type="button" class="run-button" data-task="step4" disabled>Run Step 4 - Verify</button>
+            <button type="button" class="run-button" data-task="compile-master" disabled>Compile Master List</button>
+          </div>
+          <p id="progressText" class="muted">No active workflow</p>
+          <p id="vpnModeInstructions" class="muted">Loading VPN preferences. Prepare the app and browser network before running an individual step.</p>
+        </div>
+      </section>
+
+      <section class="panel location-settings-panel" aria-labelledby="locationSettingsTitle">
+        <div class="panel-heading">
+          <h3 id="locationSettingsTitle">Location preferences</h3>
+        </div>
+        <p class="muted">Profile location matching currently uses Chaturbate metadata. Other platforms compare network visibility and support manual country tags. Locations are self-reported; language does not establish nationality.</p>
+        <form id="locationSettingsForm">
+          <fieldset id="locationSettingsFields" class="location-settings-fields" disabled>
+            <label for="vpnProvider">VPN provider
+              <select id="vpnProvider">
+                <option value="manual">Manual / any VPN</option>
+                <option value="mullvad">Mullvad (automatic)</option>
+              </select>
+            </label>
+            <label for="targetCountries">Country codes (ISO 3166-1, comma-separated)
+              <input id="targetCountries" class="search-input" type="text" list="countryCodes" placeholder="No country preference, e.g. CA, JP" maxlength="1000" autocomplete="off">
+            </label>
+            <datalist id="countryCodes"></datalist>
+            <label for="targetLocationTerms">Optional location aliases (comma-separated whole words)
+              <input id="targetLocationTerms" class="search-input" type="text" placeholder="e.g. Canada, Tokyo" maxlength="4096" autocomplete="off">
+            </label>
+            <label for="vpnRelayLocation">Mullvad comparison country (manual mode uses your own VPN app)
+              <select id="vpnRelayLocation"></select>
+            </label>
+            <button class="secondary-button" type="submit">Save preferences</button>
+          </fieldset>
+        </form>
+        <p class="muted">An empty country field means no country preference. Aliases match the profile location field. Start a new session after changing location preferences.</p>
+      </section>
+
+      <section class="split-layout">
+        <div class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">Activity</p>
+              <h3>Live log</h3>
+            </div>
+            <button id="clearLogsButton" type="button" class="ghost-button">Clear View</button>
+          </div>
+          <pre id="logOutput" class="log-output" aria-live="polite"></pre>
+        </div>
+
+        <div class="panel blocked-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">Blocked candidates</p>
+              <h3><span id="blockedCount">0</span> models</h3>
+            </div>
+            <button type="button" class="secondary-button" data-action="upload-blocked">Load .txt</button>
+            <input id="blockedFileInput" type="file" accept=".txt,text/plain" hidden>
+          </div>
+          <input id="blockedSearch" class="search-input" type="search" placeholder="Search blocked models">
+          <ul id="blockedList" class="model-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel master-panel">
+        <div class="panel-heading master-heading">
+          <div>
+            <p class="label">Master list</p>
+            <h3><span id="masterCount">0</span> saved models</h3>
+          </div>
+          <div class="master-tools">
+            <input id="manualModelInput" class="search-input compact" type="text" placeholder="Add username">
+            <button type="button" class="secondary-button" data-action="add-manual">Add</button>
+            <button type="button" class="secondary-button" data-task="verify-master" title="Disconnect or bypass VPN for the app and browser first. Clicking confirms the local network is ready." disabled>Verify Master</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <input id="masterSearch" class="search-input" type="search" placeholder="Search master list">
+          <select id="sortSelect">
+            <option value="name">Name (A-Z)</option>
+            <option value="date_newest">Date (Newest)</option>
+            <option value="date_oldest">Date (Oldest)</option>
+            <option value="country">Country</option>
+          </select>
+          <select id="countryFilter"></select>
+          <span id="visibleMasterCount" class="visible-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="master-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Date</th>
+                <th>Country</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="masterTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

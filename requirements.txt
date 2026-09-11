@@ -1,0 +1,3 @@
+# Compatibility installation path. pyproject.toml is the dependency source of
+# truth; installing this file installs the local project and runtime bounds.
+.

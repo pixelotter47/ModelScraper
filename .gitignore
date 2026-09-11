@@ -1,0 +1,77 @@
+.venv/
+*.egg-info/
+__pycache__/
+*.py[cod]
+*$py.class
+
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+.superpowers/
+.codex/
+.agents/
+.playwright-mcp/
+
+cb sessions/
+mfc sessions/
+sc sessions/
+xhl sessions/
+config/
+tmp/
+
+# Diagnostic dumps: local page evidence, not source.
+scripts/*_report.txt
+
+*.log
+*.tmp
+*.bak
+*.swp
+Thumbs.db
+desktop.ini
+
+# Local configuration, browser profiles, evidence, and exports are never source.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.sqlite
+*.sqlite3
+*.db
+*.har
+*.zip
+*.7z
+*.tar
+*.gz
+*.mp4
+*.mkv
+*.webm
+*.csv
+*.jsonl
+*.resolved
+*_report.txt
+*_metadata.json
+*_profile_matches.json
+MASTER_*
+FINAL_*
+GLOBAL_BLACKLIST.txt
+MANUAL_*
+run_state.json
+location_policy.json
+network_policy.json
+chrome_profiles/
+browser_profiles/
+downloads/
+screenshots/
+exports/
+private/
+build/
+dist/
+.idea/
+.vscode/
+venv/

@@ -1,0 +1,2 @@
+# Development/test compatibility installation path.
+-e .[dev]
