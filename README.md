@@ -68,7 +68,7 @@ live alongside the source files. Linux and macOS are not verified targets.
 Open **Preferences** on desktop, or the location settings panel in the Web UI.
 
 - **Target countries:** one or more ISO two-letter country codes, such as
-  `BR`, `DE,AT` or `RO,MD`. Leave empty for no specific country preference.
+  `BR` or `DE,AT`. Leave empty for no specific country preference.
 - **Location terms:** optional comma-separated words or place names from the
   profile location field, such as `Berlin,Hamburg`. These are text matches, not
   proof of residence. Language alone never establishes a country.
@@ -100,7 +100,6 @@ preferences**. Engine preferences save when changed. In Web, click
 | Profiles reported in Brazil | `BR` | empty | Match the platform country code |
 | Germany or Austria | `DE,AT` | empty | Match either reported country |
 | Include a city claim | `DE` | `Berlin` | Match Germany **or** the location word Berlin; preserve reported country |
-| Romania and Moldova | `RO,MD` | optional places | Explicit selection, never a built-in default |
 
 All 249 ISO country/territory codes are available. Country tags and master-list
 filters are separate from these profile-selection settings.
