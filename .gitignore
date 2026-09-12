@@ -61,6 +61,9 @@ MASTER_*
 FINAL_*
 GLOBAL_BLACKLIST.txt
 MANUAL_*
+# These reviewed source modules are not runtime exports (Git can ignore case).
+!/master_repository.py
+!/manual_workflow.py
 run_state.json
 location_policy.json
 network_policy.json

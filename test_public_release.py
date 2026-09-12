@@ -1,9 +1,12 @@
 """Regressions for accidental private data in staged/committed releases."""
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from zipfile import ZipFile
+
+import pytest
 
 MODULE = Path(__file__).parent / "scripts" / "check_public_tree.py"
 spec = importlib.util.spec_from_file_location("public_tree_check", MODULE)
@@ -38,6 +41,35 @@ def test_secret_check_does_not_print_matching_value():
 
 def test_clean_source_passes():
     assert tree({"app.py": b"print('hello')"}) == []
+
+
+def test_declared_runtime_module_must_exist_in_reviewed_tree():
+    files = {"pyproject.toml": b'[tool.setuptools]\npy-modules = ["master_repository"]\n'}
+    assert "master_repository.py: declared runtime module missing from tree" in tree(files)
+    files["master_repository.py"] = b'"""Synthetic source module."""\n'
+    assert tree(files) == []
+
+
+def test_source_exceptions_do_not_allow_runtime_exports():
+    assert tree({"manual_workflow.py": b'"""Synthetic source module."""\n'}) == []
+    for name in ("MASTER_BLOCKED_DATA.json", "MANUAL_MODELS.txt",
+                 "config/master_repository.py", "exports/manual_workflow.py"):
+        assert tree({name: b"synthetic"})
+
+
+@pytest.mark.parametrize("ignore_case", ["true", "false"])
+def test_git_keeps_source_modules_and_ignores_runtime_exports(tmp_path, ignore_case):
+    checker.git("init", "-q", root=tmp_path)
+    (tmp_path / ".gitignore").write_bytes((MODULE.parents[1] / ".gitignore").read_bytes())
+    for path, ignored in (("master_repository.py", False), ("manual_workflow.py", False),
+                          ("MASTER_BLOCKED_DATA.json", True), ("MANUAL_MODELS.txt", True),
+                          ("config/master_repository.py", True)):
+        result = subprocess.run(
+            ["git", "-C", str(tmp_path), "-c", f"core.ignorecase={ignore_case}",
+             "check-ignore", "--no-index", "-q", path],
+            capture_output=True,
+        )
+        assert result.returncode == (0 if ignored else 1), path
 
 
 def test_unlisted_file_is_rejected():

@@ -28,6 +28,8 @@ gui_app.py
 legacy_stripchat_family.py
 location_profiles.py
 machine_policy.py
+manual_workflow.py
+master_repository.py
 mfc_verifier.py
 mfcscrape.py
 modelscraper_service.py
