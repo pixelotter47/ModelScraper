@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import stat
 import tempfile
 import time
 import uuid
@@ -92,7 +93,12 @@ class TemporaryChromeProfile:
         resolved = Path(path).resolve()
         if not resolved.is_relative_to(self.root) or resolved == self.root:
             raise ValueError("temporary profile escapes owned root")
-        if Path(path).is_symlink() or Path(path).is_junction():
+        # lstat exposes reparse points on Python 3.11 as well as newer versions.
+        metadata = Path(path).lstat()
+        reparse_point = getattr(metadata, "st_file_attributes", 0) & getattr(
+            stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0
+        )
+        if stat.S_ISLNK(metadata.st_mode) or reparse_point:
             raise ValueError("temporary profile cannot be a link")
         marker = resolved / MARKER
         if not marker.is_file():

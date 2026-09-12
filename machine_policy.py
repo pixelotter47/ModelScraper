@@ -49,7 +49,8 @@ class MachinePolicyError(RuntimeError):
 
 
 def workspace_id(workspace) -> str:
-    normalized = os.path.normcase(os.path.abspath(os.fspath(workspace)))
+    # Journal paths and identities must agree for Windows short-path aliases.
+    normalized = os.path.normcase(str(Path(workspace).resolve()))
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
 
 

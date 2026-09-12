@@ -19,6 +19,7 @@ from machine_policy import (
     workspace_id,
 )
 from workflow_types import utc_now_iso
+from test_runtime_lock import windows_short_path
 
 
 class FakeVpn:
@@ -254,6 +255,23 @@ class RecoveryTests(unittest.TestCase):
             json.dumps(manifest), encoding="utf-8"
         )
         return workspace
+
+    def test_short_path_journal_is_owned_and_mirrors_the_same_checkout(self):
+        with tempfile.TemporaryDirectory(prefix="modelscraper-long-recovery-") as root:
+            workspace = self._origin_workspace(root).resolve()
+            alias = windows_short_path(workspace)
+            journal = MachinePolicyJournal(Path(root, "machine_policy"), workspace=alias)
+            document = begin(journal, alias)
+            reopened = MachinePolicyJournal(journal.runtime_dir, workspace=workspace)
+            self.assertTrue(reopened.owns_document(document))
+            result = MachinePolicyController(
+                FakeVpn(connected=False, excluded=False), reopened
+            ).recover_pending(origin_lease_factory=lambda origin: mock.MagicMock())
+            self.assertEqual(result["manifest_sync_status"], "synced")
+            self.assertTrue(result["recovered"])
+            self.assertIsNone(reopened.load_active())
+            manifest = json.loads((workspace / document["origin_manifest_relative_path"]).read_text())
+            self.assertEqual(manifest["restoration"]["state"], "restored")
 
     def test_recovery_restores_and_mirrors_the_origin_manifest(self):
         with tempfile.TemporaryDirectory() as root:

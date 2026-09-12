@@ -1,5 +1,6 @@
 import json
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +15,32 @@ from temp_profile import (
 
 
 class TemporaryProfileTests(unittest.TestCase):
+    def test_cleanup_does_not_require_python312_junction_api(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager = TemporaryChromeProfile("compatibility", root=Path(tmp, "runtime"))
+            manager.create()
+            with mock.patch.object(
+                Path, "is_junction", create=True,
+                side_effect=AssertionError("Path.is_junction is unavailable on Python 3.11"),
+            ):
+                self.assertTrue(manager.cleanup())
+
+    @unittest.skipUnless(os.name == "nt", "Windows reparse-point ownership guard")
+    def test_cleanup_rejects_reparse_points_before_removing_anything(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager = TemporaryChromeProfile("junction", root=Path(tmp, "runtime"))
+            path = Path(manager.create())
+            attributes = mock.Mock(
+                st_mode=stat.S_IFDIR,
+                st_file_attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT,
+            )
+            with mock.patch.object(Path, "lstat", return_value=attributes):
+                with mock.patch("temp_profile.shutil.rmtree") as remove:
+                    with self.assertRaisesRegex(ValueError, "cannot be a link"):
+                        manager.cleanup()
+            remove.assert_not_called()
+            self.assertTrue(path.exists())
+
     def test_public_cleanup_never_scans_personal_profile_storage(self):
         with tempfile.TemporaryDirectory() as tmp:
             personal_root = Path(tmp, "ModelScraper", "chrome_profiles")
@@ -23,7 +50,7 @@ class TemporaryProfileTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"LOCALAPPDATA": tmp}):
                 public = TemporaryChromeProfile("public")
                 public_path = Path(public.create())
-                self.assertTrue(public_path.is_relative_to(public_state_root()))
+                self.assertTrue(public_path.is_relative_to(public_state_root().resolve()))
                 result = cleanup_orphan_profiles(minimum_age_seconds=0)
             self.assertIn(str(public_path), result["removed"])
             self.assertTrue(personal_path.exists())
@@ -45,8 +72,8 @@ class TemporaryProfileTests(unittest.TestCase):
             root = Path(tmp, "runtime")
             manager = TemporaryChromeProfile("run-1", root=root)
             path = Path(manager.create())
-            self.assertTrue(path.is_relative_to(root))
-            self.assertFalse(path.is_relative_to(session))
+            self.assertTrue(path.is_relative_to(root.resolve()))
+            self.assertFalse(path.is_relative_to(session.resolve()))
             self.assertTrue(Path(path, MARKER).is_file())
             self.assertTrue(manager.cleanup())
             self.assertFalse(path.exists())

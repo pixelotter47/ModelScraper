@@ -5,6 +5,7 @@ import queue
 import threading
 import time
 import uuid
+from pathlib import Path
 
 from app_settings import AppSettings, install_shared_settings
 from ctb_core import CTBRunner, active_session_display_priority
@@ -1049,8 +1050,7 @@ class ModelScraperService:
             runner_session = runner.session_folder
             root_path = self._session_registry.root(task_platform)
             has_selected_session = bool(runner_session) and (
-                os.path.normcase(os.path.abspath(runner_session))
-                != os.path.normcase(os.path.abspath(root_path))
+                Path(runner_session).resolve() != Path(root_path).resolve()
             )
             if not has_selected_session:
                 with WorkflowLease(

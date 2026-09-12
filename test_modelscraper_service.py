@@ -6,10 +6,12 @@ import tempfile
 import threading
 import time
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 from ctb_store import ChaturbateRunStore
 from modelscraper_service import ModelScraperService
+from test_runtime_lock import windows_short_path
 from workflow_types import RunOutcome, StepName, StepOutcome
 
 
@@ -326,6 +328,17 @@ class MFCStandaloneVerifyTests(unittest.TestCase):
 
 
 class ModelScraperServiceTests(unittest.TestCase):
+    def test_background_task_reserves_session_from_short_windows_root(self):
+        with tempfile.TemporaryDirectory(prefix="ModelScraper long session path ") as base_dir:
+            service, _runners = _make_service(windows_short_path(base_dir))
+            service.run_full_auto_flow_sync = lambda *args, **kwargs: None
+            self.assertTrue(service.start_full_auto_flow())
+            service.wait_for_current_task(timeout=10)
+            self.assertEqual(
+                Path(service.get_state()["sessionPath"]),
+                Path(base_dir, "Chaturbate", "created").resolve(),
+            )
+
     def test_state_discovers_checkpoint_after_process_restart(self):
         with tempfile.TemporaryDirectory() as base_dir:
             service, runners = _make_service(base_dir)
@@ -511,12 +524,12 @@ class ModelScraperServiceTests(unittest.TestCase):
             self.assertTrue(service._set_session(mfc_session))
             self.assertTrue(service.set_platform("Stripchat"))
             self.assertTrue(service.set_platform("Chaturbate"))
-            self.assertEqual(service.get_state()["sessionPath"], ctb_session)
+            self.assertEqual(Path(service.get_state()["sessionPath"]), Path(ctb_session).resolve())
             self.assertEqual(
-                runners["Chaturbate"].session_folder, ctb_session
+                Path(runners["Chaturbate"].session_folder), Path(ctb_session).resolve()
             )
             self.assertEqual(
-                runners["MyFreeCams"].session_folder, mfc_session
+                Path(runners["MyFreeCams"].session_folder), Path(mfc_session).resolve()
             )
 
     def test_master_list_actions_delegate_to_active_runner(self):

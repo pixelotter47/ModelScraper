@@ -27,9 +27,8 @@ class WorkflowLease:
         task="",
         runtime_dir=None,
     ):
-        normalized = os.path.normcase(
-            os.path.abspath(os.fspath(workspace))
-        )
+        # Different spellings of one directory must share the same lock.
+        normalized = os.path.normcase(str(Path(workspace).resolve()))
         key = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
         if runtime_dir is None:
             root = os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()
